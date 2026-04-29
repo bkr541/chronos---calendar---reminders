@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email']) && data.keys().size() <= 4 &&
+             data.email is string && data.email.size() <= 256 &&
+             (data.get('name', '') is string && data.get('name', '').size() <= 128) &&
+             (data.get('createdAt', 0) is number);
+    }
+
+    function isValidEventType(data) {
+      return data.keys().hasAll(['userId', 'name', 'color', 'createdAt']) && data.keys().size() <= 6 &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.color is string && data.color.size() > 0 && data.color.size() <= 20 &&
+             (data.get('icon', '') is string && data.get('icon', '').size() <= 50) &&
+             data.createdAt is number;
+    }
+
+    function isValidEvent(data) {
+      return data.keys().hasAll(['userId', 'title', 'eventTypeId', 'startTime', 'endTime', 'allDay', 'createdAt', 'updatedAt']) && data.keys().size() <= 13 &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             isValidId(data.eventTypeId) &&
+             data.startTime is number && data.endTime is number && data.endTime >= data.startTime &&
+             data.allDay is bool &&
+             (data.get('location', '') is string && data.get('location', '').size() <= 300) &&
+             (data.get('notes', '') is string && data.get('notes', '').size() <= 10000) &&
+             (data.get('attendees', []) is list) &&
+             (data.get('reminderMinutesBefore', 0) is number) &&
+             (data.get('repeatRule', '') is string && data.get('repeatRule', '').size() <= 100) &&
+             data.createdAt is number && data.updatedAt is number;
+    }
+
+    function isValidReminder(data) {
+      return data.keys().hasAll(['userId', 'title', 'completed', 'createdAt']) && data.keys().size() <= 8 &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 300 &&
+             (data.get('dueTime', 0) is number) &&
+             (data.get('notes', '') is string && data.get('notes', '').size() <= 5000) &&
+             (data.get('repeatRule', '') is string && data.get('repeatRule', '').size() <= 100) &&
+             data.completed is bool &&
+             data.createdAt is number;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['userId', 'updatedAt']) &&
+             data.userId == request.auth.uid &&
+             (data.get('firstName', '') is string && data.get('firstName', '').size() <= 100) &&
+             (data.get('lastName', '') is string && data.get('lastName', '').size() <= 100) &&
+             (data.get('dob', '') is string && data.get('dob', '').size() <= 20) &&
+             (data.get('phone', '') is string && data.get('phone', '').size() <= 30) &&
+             data.updatedAt is number;
+    }
+
+    match /userProfiles/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn() && request.auth.uid == userId && isValidUserProfile(incoming());
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && incoming().email == existing().email;
+    }
+
+    match /eventTypes/{typeId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(typeId) && isValidEventType(incoming());
+      allow update: if isSignedIn() && isValidId(typeId) && 
+        isValidEventType(incoming()) && 
+        existing().userId == request.auth.uid && 
+        incoming().userId == request.auth.uid && 
+        incoming().createdAt == existing().createdAt;
+      allow delete: if isSignedIn() && isValidId(typeId) && existing().userId == request.auth.uid;
+    }
+
+    match /events/{eventId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(eventId) && isValidEvent(incoming());
+      allow update: if isSignedIn() && isValidId(eventId) && isValidEvent(incoming()) && existing().userId == request.auth.uid && incoming().userId == request.auth.uid && incoming().createdAt == existing().createdAt;
+      allow delete: if isSignedIn() && isValidId(eventId) && existing().userId == request.auth.uid;
+    }
+
+    match /reminders/{reminderId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(reminderId) && isValidReminder(incoming());
+      allow update: if isSignedIn() && isValidId(reminderId) && isValidReminder(incoming()) && existing().userId == request.auth.uid && incoming().userId == request.auth.uid && incoming().createdAt == existing().createdAt;
+      allow delete: if isSignedIn() && isValidId(reminderId) && existing().userId == request.auth.uid;
+    }
+  }
+}

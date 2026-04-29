@@ -1,0 +1,6 @@
+{
+  "name": "Chronos - Calendar & Reminders",
+  "description": "A modern mobile-first calendar and reminder app with conflict detection, dynamic event types, and Firebase backend.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
