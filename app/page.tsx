@@ -180,10 +180,12 @@ export default function Home() {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedType(cat.id === "all" ? null : cat.id)}
-                  className={`flex flex-col items-center justify-center gap-2 shrink-0 w-[80px] h-[92px] rounded-[22px] transition-all ${isActive ? 'bg-[#f0edff] border-2 border-[#6366f1] text-[#6366f1]' : 'bg-white border border-zinc-100 text-[#6b7280] shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:bg-zinc-50'}`}
+                  className="flex flex-col items-center gap-1.5 shrink-0 w-[72px]"
                 >
-                  <cat.icon size={28} strokeWidth={isActive ? 2 : 1.5} />
-                  <span className={`text-[12px] font-medium ${isActive ? 'text-[#6366f1]' : 'text-zinc-500'}`}>{cat.name}</span>
+                  <div className={`w-[64px] h-[64px] rounded-[20px] flex items-center justify-center transition-all ${isActive ? 'bg-[#f0edff] border-2 border-[#6366f1] text-[#6366f1]' : 'bg-white border border-zinc-100 text-[#6b7280] shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:bg-zinc-50'}`}>
+                    <cat.icon size={28} strokeWidth={isActive ? 2 : 1.5} />
+                  </div>
+                  <span className={`text-[11px] font-medium text-center leading-tight ${isActive ? 'text-[#6366f1]' : 'text-zinc-500'}`}>{cat.name}</span>
                 </button>
               );
             })}

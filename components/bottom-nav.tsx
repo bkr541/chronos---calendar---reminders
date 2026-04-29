@@ -40,8 +40,8 @@ export function BottomNav() {
   };
 
   return (
-    <div className="w-full px-5 pb-5 pt-8 flex-shrink-0">
-      <div className="relative">
+    <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 pt-8 pointer-events-none z-50">
+      <div className="relative pointer-events-auto">
         {/* Elevated center FAB */}
         <div className="absolute left-1/2 -translate-x-1/2 -top-7 z-10">
           <div className="p-[6px] rounded-full bg-[#C4B5FD]/60">
